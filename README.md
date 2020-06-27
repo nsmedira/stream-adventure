@@ -24,6 +24,8 @@ process.stdin.pipe(process.stdout)
 
 ## 4. Read It
 
+### My Solution
+
 ```javascript
 'use strict'
 
@@ -40,6 +42,28 @@ myStream._read = () => {}
 
 // pipe to process.stdout
 myStream.pipe(process.stdout)
+```
+### Official Solution
+
+```javascript
+const { Readable } = require('stream')
+
+class ReadableStream extends Readable {
+    constructor (content, options = {}) {
+        super(options)
+        this.content = content
+    }
+
+    _read (size) {
+        if (!this.content) return this.push(null)
+
+        this.push(this.content.slice(0, size))
+        this.content = this.content.slice(size)
+    }
+}
+
+const stream = new ReadableStream(process.argv[2])
+stream.pipe(process.stdout)
 ```
 
 ## 5. Transform
@@ -94,9 +118,83 @@ function end (done) {
 
 ## 7. Concat
 
+### My Solution
+
+```javascript
+'use strict'
+
+const concat = require('concat-stream')
+
+process.stdin
+    .pipe(concat( (buffer) => {
+        let array = buffer.toString().split('\n')
+        var blob = ''
+        for ( var i = array.length - 1 ; i >= 0 ; i-- ) {
+
+            var string = ''
+            for ( var j = array[i].length - 1 ; j >= 0 ; j-- ) {
+                string += array[i][j]
+            }
+            blob += string + '\n'
+        }
+        process.stdout.write(blob)
+    }))
+```
+
+### Official Solution
+
+```javascript
+const concat = require('concat-stream')
+    
+process.stdin.pipe(concat(function (src) {
+  const s = src.toString().split('').reverse().join('')
+  process.stdout.write(s)
+}))
+```
+
 ## 8. HTTP Server
 
+```javascript
+'use strict'
+
+const http = require('http')
+const fs = require('fs')
+const through = require('through2')
+
+const stream = through(write, end)
+
+const server = http.createServer((req, res) => {
+    if (req.method === 'POST') {
+        req.pipe(stream).pipe(res)
+    }
+})
+
+function write (buffer, encoding, next) {
+    this.push(buffer.toString().toUpperCase())
+    next()
+}
+
+function end (done) {
+    done()
+}
+
+server.listen(process.argv[2])
+```
+
 ## 9. HTTP Client
+
+```javascript
+const { request } = require('http')
+
+const options = { method: 'POST' }
+
+const req = request('http://localhost:8099/', options, (res) => {
+    // DO SOMETHING WITH THE RESPONSE
+    res.pipe(process.stdout)
+})
+
+process.stdin.pipe(req)
+```
 
 ## 10. Websockets
 
