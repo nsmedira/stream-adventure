@@ -2,7 +2,7 @@
 
 ## 1. Beep Boop
 
-https://github.com/nsmedira/stream-adventure/blob/a5658cd8333137e5051db17192282e72d3d8f476/beep-boop.js#L1
+`https://github.com/nsmedira/stream-adventure/blob/a5658cd8333137e5051db17192282e72d3d8f476/beep-boop.js#L1`
 
 ## 2. Meet Pipe
 
