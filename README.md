@@ -198,14 +198,210 @@ process.stdin.pipe(req)
 
 ## 10. Websockets
 
+```javascript
+'use strict'
+
+const WebSocket = require('ws')
+const ws = new WebSocket('ws://localhost:8099')
+const stream = WebSocket.createWebSocketStream(ws)
+
+let string = 'hello\n'
+stream.pipe(process.stdout)
+stream.write(string)
+```
+
 ## 11. HTML Stream
+
+```javascript
+'use strict'
+
+const trumpet = require('trumpet')
+const tr = trumpet()
+
+const through = require('through2')
+
+process.stdin.pipe(tr).pipe(process.stdout)
+
+function write (buffer, encoding, next) {
+    this.push(buffer.toString().toUpperCase())
+    next()
+}
+
+function end (done) {
+    done()
+}
+
+const stream = tr.select('.loud').createStream()
+stream.pipe(through(write, end)).pipe(stream)
+```
 
 ## 12. Duplexer
 
+```javascript
+'use strict'
+
+const { spawn } = require('child_process')
+const duplexer = require('duplexer2')
+
+module.exports = function (cmd, args) {
+    // spawn the process and return a single stream
+    var child = spawn(cmd, args)
+
+    // joining together the stdin and stdout here
+    return duplexer(child.stdin, child.stdout)
+
+}
+```
+
 ## 13. Duplexer Redux
+
+```javascript
+'use strict'
+
+const duplexer = require('duplexer2')
+const through = require('through2')
+
+module.exports = function (counter) {
+    var counts = {}
+    return duplexer(
+        { writableObjectMode: true },
+        through({objectMode: true}, write, end), 
+        counter
+    )
+
+    function write (object, encoding, next) {
+        var country = object.country
+        var count = counts[country] || 0
+        counts[country] = count + 1
+        next()
+    }
+
+    function end () {
+        counter.setCounts(counts)
+        counts = {}
+    }
+}
+```
 
 ## 14. Combiner
 
+```javascript
+const combine = require('stream-combiner')
+const through = require('through2')
+const split = require('split')
+const zlib = require('zlib')
+
+module.exports = function () {
+
+    var currentGenre ;
+
+    // SUPPLY COMBINE A LIST OF STREAMS. THE FIRST IS WRITABLE AND THE LAST IS READABLE
+    return combine(
+
+        // SPLIT OUR WRITTEN INPUT
+        split(),
+
+        // read newline-separated json, group books into genres,
+        through(write, end),
+
+        // then gzip the output
+        zlib.createGzip()
+
+    )
+
+    function write (line, encoding, callback) {
+
+        if ( line.length === 0 ) return callback()
+
+        // read newline-separated json,
+        // 'line' is a buffer. we can pass 'line' to JSON.parse() to convert it into a JSON object, and return to 'row'
+        var row = JSON.parse(line)
+
+        // group books into genres,
+        if (row.type === 'genre') {
+
+            // test to see if currentGenre has a value
+            if (currentGenre) {
+
+                // if currentGenre has a value, pass currentGenre object into JSON.stringify(). append a new line and push into the stream pipeline
+                this.push(JSON.stringify(currentGenre) + '\n')
+
+            } else {
+                // if currentGenre is empty, we haven't come across a json line with type = 'genre'
+            }
+
+            // set currentGenre object. name = genre name in current row; books is empty array (all subsequent json objects will be books belonging to this genre, until we hit a new json row with type = 'genre')
+            currentGenre = { name: row.name, books: []}
+
+        // if the row type is not 'genre', test for whether it is of type 'book'
+        } else if ( row.type === 'book' ) {
+
+            // if it is a book row, push the value of the 'name' key into the books array
+            currentGenre.books.push(row.name)
+        }
+
+        callback()
+
+    }
+
+    function end (done) {
+
+        // we will have one leftover, un-pushed json object after the input ends
+        if (currentGenre) {
+
+            // push the string of currentGenre JSON and a new line into the stream
+            this.push(JSON.stringify(currentGenre) + 
+            '\n')
+        }
+        done()
+    }
+
+}
+```
+
 ## 15. Crypt
 
+```javascript
+'use strict'
+
+const crypto = require('crypto')
+const stream = crypto.createDecipheriv('aes256', process.argv[2], process.argv[3])
+process.stdin.pipe(stream).pipe(process.stdout)
+```
+
 ## 16. Secretz
+
+```javascript
+'use strict'
+
+const crypto = require('crypto')
+const zlib = require('zlib')
+const { Parse } = require('tar')
+const concat = require('concat-stream')
+
+let algorithm = process.argv[2]
+let cipher = process.argv[3]
+let init = process.argv[4]
+
+const stream = crypto.createDecipheriv(algorithm, cipher, init)
+
+let parser = new Parse();
+parser.on('entry', (e) => {
+
+    // the critical problem was that we were returning if the type didn't equal 'file' but we were not resuming
+    if (e.type !== 'File') return e.resume();
+
+    var h = crypto.createHash('md5', { encoding: 'hex' })
+
+    e
+        .pipe(h)
+        .pipe(concat( (hash) => {
+            console.log(hash + ' ' + e.path)
+        }))
+})
+
+process.stdin
+    .pipe(stream)
+    .pipe(zlib.createGunzip())
+    .pipe(parser)
+```
