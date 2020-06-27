@@ -1,4 +1,4 @@
-'ust strict'
+'use strict'
 
 // you will receive the content to add to your stream from first command line argument
 let content = process.argv[2]
