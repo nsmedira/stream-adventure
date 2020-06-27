@@ -4,7 +4,6 @@ const crypto = require('crypto')
 const zlib = require('zlib')
 const { Parse } = require('tar')
 const concat = require('concat-stream')
-// const through = require('through2')
 
 let algorithm = process.argv[2]
 let cipher = process.argv[3]
@@ -19,23 +18,6 @@ parser.on('entry', (e) => {
     if (e.type !== 'File') return e.resume();
 
     var h = crypto.createHash('md5', { encoding: 'hex' })
-
-    // e.pipe(h).pipe(concat( (hash) => {
-    //     console.log(hash + ' ' + e.path)
-    // }))
-
-    // e
-    //     .pipe(h)
-    //     .pipe(through(
-    //         (buffer) => {
-    //             this.push(buffer.toString())
-    //         }, 
-    //         () => {
-    //             this.push(' ' + e.path + '\n')
-    //             this.push(null)
-    //         }
-    //     ))
-    //     .pipe(process.stdout)
 
     e
         .pipe(h)
