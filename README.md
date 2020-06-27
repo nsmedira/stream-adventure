@@ -2,11 +2,13 @@
 
 ## 1. Beep Boop
 
-`console.log('beep boop')`
+```javascript
+console.log('beep boop')
+```
 
 ## 2. Meet Pipe
 
-```
+```javascript
 'use strict'
 let file = process.argv[2]
 const fs = require('fs')
