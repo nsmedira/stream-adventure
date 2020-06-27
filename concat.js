@@ -1,7 +1,7 @@
 'use strict'
 
 const concat = require('concat-stream')
-const through = require('through2')
+// const through = require('through2')
 // const split = require('split2')
 
 process.stdin
