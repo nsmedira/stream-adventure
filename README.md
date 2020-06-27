@@ -2,9 +2,16 @@
 
 ## 1. Beep Boop
 
-`https://github.com/nsmedira/stream-adventure/blob/a5658cd8333137e5051db17192282e72d3d8f476/beep-boop.js#L1`
+`console.log('beep boop')`
 
 ## 2. Meet Pipe
+
+```
+'use strict'
+let file = process.argv[2]
+const fs = require('fs')
+fs.createReadStream(file).pipe(process.stdout)
+```
 
 ## 3. Input Output
 
